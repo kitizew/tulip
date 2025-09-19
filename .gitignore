@@ -1,0 +1,10 @@
+config.py
+__pycache__
+.idea/
+token.json
+data.json
+credentials.json
+codeToRm.py
+result.html
+temp.py
+vlad.py
