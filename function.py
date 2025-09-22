@@ -13,7 +13,9 @@ from config import SPREADSHEET_ID , RANGE_NAME , CALENDAR_ID
 from datetime import datetime, timedelta
 
 from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes , ConversationHandler
+
+
 
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets.readonly',
@@ -26,19 +28,72 @@ role_map = {
     "TL  Leadgen&CX": "Y"
 }
 
-async def x_ray_request(text , update):
+# Головне меню
+main_menu = [
+    ["xray"],
+    ["проєкти"],
+    ["постик"],
+    ["рм календар"]
+]
 
-    #aboba = update.message.reply_text("абоба")
+menu_project = [
+    ["Тернопіль", "Рівне"],
+    ["назад"]
+]
 
-    #await update.message.reply_text("sdfastew")
-    #context.user_data["choice"] = text
+cyti_name = ""
+CHOOSING = range(1)
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Привіт , як твій день ? , з чого почнемо сьогодні?",
+        reply_markup=ReplyKeyboardMarkup(main_menu, one_time_keyboard=False)
+    )
+    return CHOOSING
+
+
+
+async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Display the gathered info and end the conversation."""
+    user_data = context.user_data
+    if "choice" in user_data:
+        del user_data["choice"]
+
+    user_data.clear()
+    return ConversationHandler.END
+
+
+async def xray(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Оберіть регіон" ,
+        reply_markup=ReplyKeyboardMarkup(menu_project, one_time_keyboard=True)
+    )
+
+    return CHOOSING
+
+async def ternopil_choice (update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Вибране місто: Тернопіль? Який ваш X-ray запит?")
+    text = update.message.text
+    context.user_data["choice"] = text
     print(text)
-    aboba = await update.message.reply_text("гойда")
-    print(aboba)
 
-    #text = Update.message.text
+
+async def regular_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    cyti_name = update.message.text
+    context.user_data["choice"] = cyti_name
+    print(cyti_name)
+    await update.message.reply_text(f"Вибране місто:  {cyti_name}?Який ваш X-ray запит?")
+    print("hoida")
+    text = Update.message.text
+    context.user_data["choice"] = text
+    print(text)
+
+
+
+async def x_ray_request(text , update):
     api_key = TOKENDEEPSEEK
-    text = f"w {aboba}"
+    text = f"w {text}"
 
     response = requests.post(
         url="https://openrouter.ai/api/v1/chat/completions",
@@ -64,8 +119,7 @@ async def x_ray_request(text , update):
 
 '''async def projects (text):'''
 
-
-'''async def rm_calendar():
+async def rm_calendar():
 
     filename = "data.json"
 
@@ -104,9 +158,6 @@ async def x_ray_request(text , update):
     # Записуємо у JSON
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump(extracted_rows, f, ensure_ascii=False, indent=2)
-
-
-
 
     """Нормалізує всі дати у файлі JSON до формату YYYY-MM-DD"""
     formats = ["%m/%d/%Y", "%Y-%m-%d", "%d/%m/%Y", "%m/%d/%y"]
@@ -148,5 +199,5 @@ async def x_ray_request(text , update):
         created_event = service.events().insert(calendarId=CALENDAR_ID, body=event).execute()
         print(f"✅ Додано подію: {created_event['summary']} на {date}")
         
-        '''
+
 

@@ -5,23 +5,25 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 from function import *
 
-# Головне меню
-main_menu = [
-    ["x-ray запит"],
-    ["проєкти"],
-    [""],
-    ["рм календар"]
-]
 
-menu_project = [
-    ["Тернопіль", "Рівне"],
-    ["назад"]
-]
 
+
+'''
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = ReplyKeyboardMarkup(main_menu, resize_keyboard=True)
     await update.message.reply_text("Головне меню:", reply_markup=reply_markup)
+'''
 
+
+
+
+
+
+
+
+
+
+'''
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
@@ -29,27 +31,27 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         case "x-ray запит":
             await update.message.reply_text("Регіон?", reply_markup=ReplyKeyboardMarkup(menu_project, resize_keyboard=True , one_time_keyboard=True))
         case "Тернопіль":
-            '''await x_ray_request(text)'''
+            await x_ray_request(text)
         case "Рівне":
             await x_ray_request(text , update)
 
-            '''await update.message.reply_text("Чувак,введи шо ти хочеш ")
+            await update.message.reply_text("Чувак,введи шо ти хочеш ")
             #t=update.message.text()
             #print(t)
-            print(x_ray_request(text))'''
+            print(x_ray_request(text))
 
 
         case "проєкти":
             #await update.message.reply_text("веном")
-            '''await project()'''
+            await project()
 
 
         case "":
-            '''await'''
+            await
 
 
         case "рм календар":
-            '''await rm_calendar()'''
+            await rm_calendar()
 
 
         case "назад":
@@ -58,12 +60,31 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         case _:
             await update.message.reply_text("Я не знаю такої кнопки 🤔")
-
+'''
 def main():
-    app = Application.builder().token(TOKENTELEGRAM).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
-    app.run_polling()
+    application = Application.builder().token(TOKENTELEGRAM).build()
+
+    conv_handler = ConversationHandler(
+        entry_points=[
+            CommandHandler("start", start)
+            #CommandHandler("рм календар", await rm_calendar())
+                      ],
+        states={
+            CHOOSING: [
+                MessageHandler(filters.Regex("^(xray)$"), xray),
+                MessageHandler(filters.Regex("^(Тернопіль)$"), ternopil_choice ),
+
+            ]
+
+        },
+        fallbacks=[MessageHandler(filters.Regex("^Done$"), done)],
+    )
+    application.add_handler(conv_handler)
+
+    # Run the bot until the user presses Ctrl-C
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
+
+
 
 
 if __name__ == "__main__":
