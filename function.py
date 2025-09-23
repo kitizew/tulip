@@ -1,21 +1,26 @@
 from __future__ import print_function
 from bs4 import BeautifulSoup
 import os.path
-from config import TOKENDEEPSEEK
+from config import TOKENDEEPSEEK , TOKENGEMINI
 import requests
 import json
+from telegram.constants import ParseMode
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 import json;
-from config import SPREADSHEET_ID , RANGE_NAME , CALENDAR_ID
+from config import SHEET_CALENDAR_ID , RANGE_NAME , CALENDAR_ID , SHEET_PROJECT_NAME
 from datetime import datetime, timedelta
+
+from google import genai
 
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes , ConversationHandler
 
 
+
+PROJECT_NAME_RANGE="Talent!C"
 
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets.readonly',
@@ -36,13 +41,18 @@ main_menu = [
     ["рм календар"]
 ]
 
-menu_project = [
+menu_city = [
     ["Тернопіль", "Рівне"],
     ["назад"]
 ]
 
-cyti_name = ""
-CHOOSING = range(1)
+menu_projects = [
+    ["Телент", "Тічер"],
+    ["назад"]
+]
+
+city_name = ""
+CHOOSING , CHOOSING_CYTI = range(2)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -51,8 +61,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         reply_markup=ReplyKeyboardMarkup(main_menu, one_time_keyboard=False)
     )
     return CHOOSING
-
-
 
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Display the gathered info and end the conversation."""
@@ -63,82 +71,113 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_data.clear()
     return ConversationHandler.END
 
+async def back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Що вибереш?" ,
+        reply_markup=ReplyKeyboardMarkup(main_menu, one_time_keyboard=True)
+    )
 
 async def xray(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(
         "Оберіть регіон" ,
-        reply_markup=ReplyKeyboardMarkup(menu_project, one_time_keyboard=True)
+        reply_markup=ReplyKeyboardMarkup(menu_city, one_time_keyboard=True)
     )
 
     return CHOOSING
 
-async def ternopil_choice (update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Вибране місто: Тернопіль? Який ваш X-ray запит?")
-    text = update.message.text
-    context.user_data["choice"] = text
+
+async def city_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    global city_name
+
+    city_name = update.message.text
+    context.user_data["city_name"] = city_name
+    print(city_name)
+    await update.message.reply_text(f"Вибране місто: {city_name}?Який ваш X-ray запит?")
+
+    return CHOOSING_CYTI
+
+
+
+async def x_raychik(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+
+    x_request = update.message.text
+    context.user_data["x_request"] = x_request
+    print(x_request)
+    text = f"Згенеруй тільки робоче посилання в url кодуванні,як в Google x-ray запиту для пошуку  на LinkedIn за даними:  Місто: {city_name} {x_request} Видай посилання єдиним рядком тексту, без жодних додаткових пояснень чи форматування.{x_request},візьми за основу такий формат посилання:(https://www.google.com/search?q=site%3Alinkedin.com%2Fin%2F%20%22%D0%A2%D0%B5%D1%80%D0%BD%D0%BE%D0%BF%D1%96%D0%BB%D1%8C%22%20%22%D0%B1%D1%96%D0%B7%D0%BD%D0%B5%D1%81%20%D0%B0%D0%B4%D0%BC%D1%96%D0%BD%D1%96%D1%81%D1%82%D1%80%D1%83%D0%B2%D0%B0%D0%BD%D0%BD%D1%8F%22%20%22%D0%B0%D0%BD%D0%B3%D0%BB%D1%96%D0%B9%D1%81%D1%8C%D0%BA%D0%B0%20B1%22)"
     print(text)
 
+    client = genai.Client(api_key=TOKENGEMINI)
 
-async def regular_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    cyti_name = update.message.text
-    context.user_data["choice"] = cyti_name
-    print(cyti_name)
-    await update.message.reply_text(f"Вибране місто:  {cyti_name}?Який ваш X-ray запит?")
-    print("hoida")
-    text = Update.message.text
-    context.user_data["choice"] = text
-    print(text)
+    response = client.models.generate_content(
+        model = "models/gemini-2.5-pro" ,
+        contents = text
+    )
+    #bot.send_message(chat_id = update.message.chat_id, text = "<a href='https://www.google.com/'>Google</a>", parse_mode = ParseMode.HTML)
+    reply=response.text
+    print(type(reply))
+    print(f"<a href='{response.text}")
+    await update.message.reply_text(text = f"<a href='{response.text}'>X-ray</a>", parse_mode = ParseMode.HTML)
+    print(response.text)
 
 
-
-async def x_ray_request(text , update):
-    api_key = TOKENDEEPSEEK
-    text = f"w {text}"
-
-    response = requests.post(
-        url="https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        data=json.dumps({
-            "model": "deepseek/deepseek-chat-v3.1:free",
-            "messages": [
-                {"role": "user", "content": text }
-            ],
-        })
+async def project (update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Який тип проєкту?",
+        reply_markup=ReplyKeyboardMarkup(menu_projects, one_time_keyboard=False)
     )
 
-    result = response.json()
 
-    if "choices" in result:
-        print(result["choices"][0]["message"]["content"])
+async def talent (update: Update, context: ContextTypes.DEFAULT_TYPE):
+    creds = None
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
     else:
-        print("Помилка від API:", result)
+        flow = InstalledAppFlow.from_client_secrets_file(
+            "credentials.json", SCOPES
+        )
+        creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+    with open("token.json", "w") as token:
+        token.write(creds.to_json())
+
+    service = build("sheets", "v4", credentials=creds)
+
+    sheet = service.spreadsheets()
+    result = (
+        sheet.values()
+        .get(spreadsheetId=SHEET_PROJECT_NAME, range=PROJECT_NAME_RANGE)
+        .execute()
+    )
+    values = result.get("values", [])
+
+    for row in values:
+      # Print columns A and E, which correspond to indices 0 and 4.
+      print(f"{row[6]}, {row[4]}")
 
 
-'''async def projects (text):'''
+
+
+async def teacher(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    pass
+
+
 
 async def rm_calendar():
 
     filename = "data.json"
-
-    creds = None
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
-
     service = build('sheets', 'v4', credentials=creds)
 
     sheet = service.spreadsheets()
-    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID,
+    result = sheet.values().get(spreadsheetId=SHEET_CALENDAR_ID,
                                 range=RANGE_NAME).execute()
 
     rows = result.get('values', [])

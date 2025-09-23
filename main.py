@@ -5,62 +5,6 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 from function import *
 
-
-
-
-'''
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    reply_markup = ReplyKeyboardMarkup(main_menu, resize_keyboard=True)
-    await update.message.reply_text("Головне меню:", reply_markup=reply_markup)
-'''
-
-
-
-
-
-
-
-
-
-
-'''
-async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-
-    match text:
-        case "x-ray запит":
-            await update.message.reply_text("Регіон?", reply_markup=ReplyKeyboardMarkup(menu_project, resize_keyboard=True , one_time_keyboard=True))
-        case "Тернопіль":
-            await x_ray_request(text)
-        case "Рівне":
-            await x_ray_request(text , update)
-
-            await update.message.reply_text("Чувак,введи шо ти хочеш ")
-            #t=update.message.text()
-            #print(t)
-            print(x_ray_request(text))
-
-
-        case "проєкти":
-            #await update.message.reply_text("веном")
-            await project()
-
-
-        case "":
-            await
-
-
-        case "рм календар":
-            await rm_calendar()
-
-
-        case "назад":
-            await update.message.reply_text("Повертаємось", reply_markup=ReplyKeyboardMarkup(main_menu, resize_keyboard=True))
-
-
-        case _:
-            await update.message.reply_text("Я не знаю такої кнопки 🤔")
-'''
 def main():
     application = Application.builder().token(TOKENTELEGRAM).build()
 
@@ -71,9 +15,16 @@ def main():
                       ],
         states={
             CHOOSING: [
+                MessageHandler(filters.Regex("^(назад)$"), back),
                 MessageHandler(filters.Regex("^(xray)$"), xray),
-                MessageHandler(filters.Regex("^(Тернопіль)$"), ternopil_choice ),
+                MessageHandler(filters.Regex("^(Тернопіль|Рівне)$"), city_choice ),
+                MessageHandler(filters.Regex("^(проєкти)$"), project),
+                MessageHandler(filters.Regex("^(Телент)$"), talent),
+                #MessageHandler(filters.Regex("^(Тічер)$"), teacher),
 
+            ],
+            CHOOSING_CYTI: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, x_raychik)
             ]
 
         },
