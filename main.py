@@ -21,10 +21,16 @@ def main():
                 MessageHandler(filters.Regex("^(проєкти)$"), project),
                 MessageHandler(filters.Regex("^(Телент)$"), talent),
                 #MessageHandler(filters.Regex("^(Тічер)$"), teacher),
+                MessageHandler(filters.Regex("^(Додати)$"), A_choose_where),
+                MessageHandler(filters.Regex("^(Фокусні)$"), Focus_A),
+                MessageHandler(filters.Regex("^(рМкалендар)$"), rm_calendar),
 
             ],
             CHOOSING_CYTI: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, x_raychik)
+            ],
+            GET_LINK: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, add_to_table)
             ]
 
         },
@@ -34,6 +40,7 @@ def main():
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
+
 
 
 
