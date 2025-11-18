@@ -35,7 +35,8 @@ if os.path.exists("token.json"):
     creds = Credentials.from_authorized_user_file("token.json", SCOPES)
 if not creds or not creds.valid:
     if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
+        pass
+        #creds.refresh(Request())
     else:
         flow = InstalledAppFlow.from_client_secrets_file(
             "credentials.json", SCOPES
@@ -80,10 +81,12 @@ projectA_part_lc2lc = [
     ["Фокусні" , "Партнери"],
     ["назад"]
 ]
-
+menu_postik = [
+    ["назад"]
+]
 
 city_name = ""
-CHOOSING , CHOOSING_CYTI , GET_LINK = range(3)
+CHOOSING , CHOOSING_CYTI , GET_LINK , POST = range(4)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -155,6 +158,42 @@ async def x_raychik(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         "Що далі?",
         reply_markup=ReplyKeyboardMarkup(main_menu, one_time_keyboard=True)
     )
+    return 0
+
+async def post(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        f"Надай мені посилання на проект: ",
+        reply_markup=ReplyKeyboardMarkup(menu_postik, one_time_keyboard=True)
+    )
+    postik
+    return POST
+
+async def postik(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    req_for_prompt=update.message.text
+    client = genai.Client(api_key=TOKENGEMINI)
+    with open('prompt.txt', 'r', encoding='utf-8') as file:
+        file_content = file.read()
+
+    response = client.models.generate_content(
+        model="models/gemini-2.5-pro",
+        contents=f"Привіт,ось посилання на проект : {req_for_prompt}. Збери дані з цього сайту та надай мені відповідь у такому чіткому форматі:{file_content} (надай мені тільки сам результат без лишнього тексту та лапок)",
+    )
+    project_text= response.text
+    print(project_text)
+    response = client.models.generate_content(
+        model="models/gemini-2.5-pro",
+        contents=f"Поверни мені тільки назву міста і країну з цих даних: {project_text}(тільки результат без будь якого зайвого тексту)",
+    )
+    place=response.text
+    print(place)
+
+    response = client.models.generate_content(
+        model="models/gemini-2.5-pro",
+        contents=f"",
+    )
+
+    # Команда для відправки фото за URL
+    await context.bot.send_photo(chat_id=update.message.chat_id, image="image_stream")
     return 0
 
 
