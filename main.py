@@ -24,8 +24,6 @@ def main():
                 MessageHandler(filters.Regex("^(Додати)$"), A_choose_where),
                 MessageHandler(filters.Regex("^(Фокусні)$"), Focus_A),
                 MessageHandler(filters.Regex("^(рМкалендар)$"), rm_calendar),
-                MessageHandler(filters.Regex("^(постик)$"), post),
-                MessageHandler(filters.Regex("^(Го)$"), postik),
 
             ],
             CHOOSING_CYTI: [
@@ -33,9 +31,6 @@ def main():
             ],
             GET_LINK: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, add_to_table)
-            ],
-            POST: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, postik)
             ]
 
         },

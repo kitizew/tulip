@@ -1,0 +1,9 @@
+beautifulsoup4
+requests
+python-telegram-bot
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+google-genai
+playwright
