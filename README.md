@@ -1,6 +1,6 @@
 # tulip
 
-Автоматизація рутинних задач
+Автоматизація рутинних задач AIESEC
 
 <img width="695" height="378" alt="зображення" src="https://github.com/user-attachments/assets/05f65d10-8da0-41ad-a78a-c06370be7d12" />
 
